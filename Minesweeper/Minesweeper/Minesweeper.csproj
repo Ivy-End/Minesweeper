@@ -50,10 +50,28 @@
     <Compile Include="Form_Main.Designer.cs">
       <DependentUpon>Form_Main.cs</DependentUpon>
     </Compile>
+    <Compile Include="Form_Rank.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_Rank.Designer.cs">
+      <DependentUpon>Form_Rank.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form_Setting.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_Setting.Designer.cs">
+      <DependentUpon>Form_Setting.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form_Main.resx">
       <DependentUpon>Form_Main.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_Rank.resx">
+      <DependentUpon>Form_Rank.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_Setting.resx">
+      <DependentUpon>Form_Setting.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

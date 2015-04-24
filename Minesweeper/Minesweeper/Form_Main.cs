@@ -13,9 +13,9 @@ namespace Minesweeper
 {
     public partial class Form_Main : Form
     {
-        int nWidth;     // 表示雷区的宽度
-        int nHeight;        // 表示雷区的高度
-        int nMineCnt;       // 表示地雷的数目
+        public int nWidth;     // 表示雷区的宽度
+        public int nHeight;        // 表示雷区的高度
+        public int nMineCnt;       // 表示地雷的数目
 
         bool bMark;     // 表示是否使用标记
         bool bAudio;    // 表示是否使用音效
@@ -206,6 +206,19 @@ namespace Minesweeper
         private void audioMToolStripMenuItem_Click(object sender, EventArgs e)
         {
             audioMToolStripMenuItem.Checked = bAudio = !bAudio;
+        }
+
+        private void settingSToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Form_Setting Setting = new Form_Setting(this);  // 将本身作为参数传递过去
+            Setting.ShowDialog();
+            UpdateSize();
+        }
+
+        private void rankRToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Form_Rank Rank = new Form_Rank();
+            Rank.ShowDialog();
         }
     }
 }
