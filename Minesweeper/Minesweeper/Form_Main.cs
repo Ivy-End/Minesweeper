@@ -13,6 +13,11 @@ namespace Minesweeper
 {
     public partial class Form_Main : Form
     {
+        const int MAX_WIDTH = 64;   // 最大宽度
+        const int MAX_HEIGHT = 32;  // 最大高度
+        int[] dx = new int[] { -1, 0, 1, -1, 1, -1, 0, 1 };   // x坐标偏移量
+        int[] dy = new int[] { 1, 1, 1, 0, 0, -1, -1, -1 };   // y坐标偏移量
+
         public int nWidth;     // 表示雷区的宽度
         public int nHeight;        // 表示雷区的高度
         public int nMineCnt;       // 表示地雷的数目
@@ -20,9 +25,16 @@ namespace Minesweeper
         bool bMark;     // 表示是否使用标记
         bool bAudio;    // 表示是否使用音效
 
+        int[,] pMine = new int[MAX_WIDTH, MAX_HEIGHT];  // 第一类数据
+        int[,] pState = new int[MAX_WIDTH, MAX_HEIGHT]; // 第二类数据
+
+        Point MouseFocus;   // 高亮点记录
+
         public Form_Main()
         {
             InitializeComponent();
+            
+            this.DoubleBuffered = true; // 开启双缓冲
 
             // 初始化游戏参数
             nWidth = Properties.Settings.Default.Width;
@@ -114,16 +126,15 @@ namespace Minesweeper
 
         private void Form_Main_Paint(object sender, PaintEventArgs e)
         {
-            PaintGame();
+            PaintGame(e.Graphics);
         }
 
         /// <summary>
         /// 绘制游戏区
         /// </summary>
-        private void PaintGame()
+        private void PaintGame(Graphics g)
         {
-            Graphics g = this.CreateGraphics();     //  创建绘图句柄
-            g.FillRectangle(Brushes.White, new Rectangle(0, 0, this.Width, this.Height));
+            g.Clear(Color.White);   // 清空绘图区
             // 我们需要是雷区在用户显示的区域上下左右保持6px的偏移量，使得整体看起来更加协调
             int nOffsetX = 6;   // X方向偏移量
             int nOffsetY = 6 + MenuStrip_Main.Height;   // Y方向偏移量
@@ -135,7 +146,16 @@ namespace Minesweeper
                     // 第二个参数为方块的参数，这里采用左上角坐标以及长宽的形式给出
                     // 34表示每个雷区的大小，再加上偏移量就是我们当前雷区的起始位置，由于要空出1px的间隔，因此还需要加1
                     // 由此可以的到每个方块在雷区中的位置，然后利用循环绘制出来
-                    g.FillRectangle(Brushes.SandyBrown, new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));   // 绘制雷区方块
+
+                    if(i == MouseFocus.X && j == MouseFocus.Y)  // 是否为高亮点
+                    {
+                        g.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.SandyBrown)), new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
+                    }
+                    else
+                    {
+                        g.FillRectangle(Brushes.SandyBrown, new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));   // 绘制雷区方块
+                    }
+                    
                 }
             }
         }
@@ -150,7 +170,7 @@ namespace Minesweeper
             int nAdditionY = MenuStrip_Main.Height + TableLayoutPanel_Main.Height;  // 包含了菜单栏以及下方显示信息栏的高度
             this.Width = 12 + 34 * nWidth + nOffsetX;   // 设置窗口高度，34为每个雷区的高度，12为上下总空隙（6px+6px），再加上偏移量
             this.Height = 12 + 34 * nHeight + nAdditionY + nOffsetY;    // 设置窗口宽度，同理
-            PaintGame();
+            newGameNToolStripMenuItem_Click(new object(), new EventArgs()); // 调用新建游戏函数
         }
 
         private void beginnerBToolStripMenuItem_Click(object sender, EventArgs e)
@@ -219,6 +239,68 @@ namespace Minesweeper
         {
             Form_Rank Rank = new Form_Rank();
             Rank.ShowDialog();
+        }
+
+        private void newGameNToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // 以下两行清空数组
+            Array.Clear(pMine, 0, pMine.Length);
+            Array.Clear(pState, 0, pState.Length);
+            // 重置高亮点
+            MouseFocus.X = 0; MouseFocus.Y = 0;
+            // 初始化地雷数据
+            Random Rand = new Random();
+            for(int i = 1; i <= nMineCnt; )  // 地雷总数
+            {
+                // 随机地雷坐标(x, y)
+                int x = Rand.Next(nWidth) + 1; 
+                int y = Rand.Next(nHeight) + 1;
+                if (pMine[x, y] != -1)
+                {
+                    pMine[x, y] = -1; i++;
+                }
+            }
+            for(int i = 1; i <= nWidth; i++)    // 枚举宽度
+            {
+                for(int j = 1; j <= nHeight; j++)   // 枚举高度
+                {
+                    if(pMine[i, j] != -1)   // 不是地雷，显示周围地雷数
+                    {
+                        for(int k = 0; k < 8; k++)  // 八个方向拓展
+                        {
+                            if(pMine[i + dx[k], j + dy[k]] == -1)   // 找到地雷
+                            {
+                                pMine[i, j]++;  // 地雷数自增
+                            }
+                        }
+                    }
+                }
+            }
+            Label_Mine.Text = nMineCnt.ToString();  // 显示地雷数目
+            Label_Timer.Text = "0"; // 计时器清零
+            Timer_Main.Enabled = true;  // 启动计时器计时 
+        }
+
+        private void Form_Main_MouseMove(object sender, MouseEventArgs e)
+        {
+            if(e.X < 6 || e.X > 6 + nWidth * 34 || 
+                e.Y < 6 + MenuStrip_Main.Height || 
+                e.Y > 6 + MenuStrip_Main.Height + nHeight * 34) // 不在地雷区域
+            {
+                MouseFocus.X = 0; MouseFocus.Y = 0;
+            }
+            else
+            {
+                int x = (e.X - 6) / 34 + 1; // 获取x位置
+                int y = (e.Y - MenuStrip_Main.Height - 6) / 34 + 1; // 获取y位置
+                MouseFocus.X = x; MouseFocus.Y = y; // 设置当前高亮点
+            }
+            this.Refresh();    // 重绘雷区
+        }
+
+        private void Timer_Main_Tick(object sender, EventArgs e)
+        {
+            Label_Timer.Text = Convert.ToString(Convert.ToInt32(Label_Timer.Text) + 1); // 自增1秒
         }
     }
 }
