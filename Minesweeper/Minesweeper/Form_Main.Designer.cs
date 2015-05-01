@@ -286,7 +286,9 @@
             this.Name = "Form_Main";
             this.Text = "Minesweeper";
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form_Main_Paint);
+            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form_Main_MouseDown);
             this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Form_Main_MouseMove);
+            this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Form_Main_MouseUp);
             this.MenuStrip_Main.ResumeLayout(false);
             this.MenuStrip_Main.PerformLayout();
             this.TableLayoutPanel_Main.ResumeLayout(false);

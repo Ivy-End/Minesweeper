@@ -17,6 +17,8 @@ namespace Minesweeper
         const int MAX_HEIGHT = 32;  // 最大高度
         int[] dx = new int[] { -1, 0, 1, -1, 1, -1, 0, 1 };   // x坐标偏移量
         int[] dy = new int[] { 1, 1, 1, 0, 0, -1, -1, -1 };   // y坐标偏移量
+        int[] px = new int[] { 1, -1, 0, 0 };   // 四方向x坐标偏移量
+        int[] py = new int[] { 0, 0, 1, -1 };   // 四方向y坐标偏移量
 
         public int nWidth;     // 表示雷区的宽度
         public int nHeight;        // 表示雷区的高度
@@ -24,6 +26,9 @@ namespace Minesweeper
 
         bool bMark;     // 表示是否使用标记
         bool bAudio;    // 表示是否使用音效
+
+        bool bMouseLeft;    // 鼠标左键是否被按下
+        bool bMouseRight;   // 鼠标右键是否被按下
 
         int[,] pMine = new int[MAX_WIDTH, MAX_HEIGHT];  // 第一类数据
         int[,] pState = new int[MAX_WIDTH, MAX_HEIGHT]; // 第二类数据
@@ -146,16 +151,57 @@ namespace Minesweeper
                     // 第二个参数为方块的参数，这里采用左上角坐标以及长宽的形式给出
                     // 34表示每个雷区的大小，再加上偏移量就是我们当前雷区的起始位置，由于要空出1px的间隔，因此还需要加1
                     // 由此可以的到每个方块在雷区中的位置，然后利用循环绘制出来
-
-                    if(i == MouseFocus.X && j == MouseFocus.Y)  // 是否为高亮点
+                    if(pState[i, j] != 1)   // 未点开
                     {
-                        g.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.SandyBrown)), new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
+                        // 绘制背景
+                        if (i == MouseFocus.X && j == MouseFocus.Y)  // 是否为高亮点
+                        {
+                            g.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.SandyBrown)), new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
+                        }
+                        else
+                        {
+                            g.FillRectangle(Brushes.SandyBrown, new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));   // 绘制雷区方块
+                        }
+                        // 绘制标记
+                        if(pState[i, j] == 2)
+                        {
+                            g.DrawImage(Properties.Resources.Flag, nOffsetX + 34 * (i - 1) + 1 + 4, nOffsetY + 34 * (j - 1) + 1 + 2);   // 绘制红旗
+                        }
+                        if(pState[i, j] == 3)
+                        {
+                            g.DrawImage(Properties.Resources.Doubt, nOffsetX + 34 * (i - 1) + 1 + 4, nOffsetY + 34 * (j - 1) + 1 + 2);   // 绘制问号
+                        }
                     }
-                    else
+                    else if(pState[i, j] == 1)  // 点开
                     {
-                        g.FillRectangle(Brushes.SandyBrown, new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));   // 绘制雷区方块
+                        if(pMine[i, j] != -1)    // 非地雷
+                        {
+                            // 绘制背景
+                            if(MouseFocus.X == i && MouseFocus.Y == j)
+                            {
+                                g.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.LightGray)), new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
+                            }
+                            else
+                            {
+                                g.FillRectangle(Brushes.LightGray, new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
+                            }
+                            // 绘制数字
+                            if(pMine[i, j] != 0)
+                            {
+                                Brush DrawBrush = new SolidBrush(Color.Blue);    // 定义钢笔
+                                // 各个地雷数目的颜色
+                                if (pMine[i, j] == 2) { DrawBrush = new SolidBrush(Color.Green); }
+                                if (pMine[i, j] == 3) { DrawBrush = new SolidBrush(Color.Red); }
+                                if (pMine[i, j] == 4) { DrawBrush = new SolidBrush(Color.DarkBlue); }
+                                if (pMine[i, j] == 5) { DrawBrush = new SolidBrush(Color.DarkRed); }
+                                if (pMine[i, j] == 6) { DrawBrush = new SolidBrush(Color.DarkSeaGreen); }
+                                if (pMine[i, j] == 7) { DrawBrush = new SolidBrush(Color.Black); }
+                                if (pMine[i, j] == 8) { DrawBrush = new SolidBrush(Color.DarkGray); }
+                                SizeF Size = g.MeasureString(pMine[i, j].ToString(), new Font("Consolas", 16));
+                                g.DrawString(pMine[i, j].ToString(), new Font("Consolas", 16), DrawBrush, nOffsetX + 34 * (i - 1) + 1 + (32 - Size.Width) / 2, nOffsetY + 34 * (j - 1) + 1 + (32 - Size.Height) / 2);
+                            }
+                        }
                     }
-                    
                 }
             }
         }
@@ -301,6 +347,130 @@ namespace Minesweeper
         private void Timer_Main_Tick(object sender, EventArgs e)
         {
             Label_Timer.Text = Convert.ToString(Convert.ToInt32(Label_Timer.Text) + 1); // 自增1秒
+        }
+
+        private void Form_Main_MouseDown(object sender, MouseEventArgs e)
+        {
+            if(e.Button == MouseButtons.Left)   // 鼠标左键被按下
+            {
+                bMouseLeft = true;
+            }
+            if(e.Button == MouseButtons.Right)  // 鼠标右键被按下
+            {
+                bMouseRight = true;
+            }
+        }
+
+        private void Form_Main_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (MouseFocus.X == 0 && MouseFocus.Y == 0) // 不在地雷区域
+            {
+                return; // 不做任何处理
+            }
+
+            if(bMouseLeft && bMouseRight)   // 左右键同时按下
+            {
+                if(pState[MouseFocus.X, MouseFocus.Y] == 1 && pMine[MouseFocus.X, MouseFocus.Y] > 0)    // 为数字区域
+                {
+                    int nFlagCnt = 0, nDoubtCnt = 0, nSysCnt = pMine[MouseFocus.X, MouseFocus.Y];   // 记录红旗数目，问号数目，九宫格地雷数目
+                    for(int i = 0; i < 8; i++)
+                    {
+                        // 获取偏移量
+                        int x = MouseFocus.X + dx[i];
+                        int y = MouseFocus.Y + dy[i];
+                        if(pState[x, y] == 2)   // 红旗
+                        {
+                            nFlagCnt++;
+                        }
+                        if(pState[x, y] == 3)   // 问号
+                        {
+                            nDoubtCnt++;
+                        }
+                        if(nFlagCnt == nSysCnt || nFlagCnt + nDoubtCnt == nSysCnt) // 打开九宫格
+                        {
+                            bool bFlag = OpenMine(MouseFocus.X, MouseFocus.Y);
+                            if (!bFlag) // 周围有地雷
+                            {
+                                // 结束游戏 
+                            }
+                        }
+                    }
+                }
+            }
+            else if(bMouseLeft) // 左键被按下
+            {
+                if(pMine[MouseFocus.X, MouseFocus.Y] != -1 && pState[MouseFocus.X, MouseFocus.Y] == 0)
+                {
+                    dfs(MouseFocus.X, MouseFocus.Y);
+                }
+                else
+                {
+                    // 地雷，游戏结束
+                }
+            }
+            else if(bMouseRight)    // 右键被按下
+            {
+                if(bMark)   // 可以使用标记
+                {
+                    if(pState[MouseFocus.X, MouseFocus.Y] == 0) // 未点开
+                    {
+                        if (Convert.ToInt32(Label_Mine.Text) > 0)
+                        {
+                            pState[MouseFocus.X, MouseFocus.Y] = 2; // 红旗
+                            Label_Mine.Text = Convert.ToString(Convert.ToInt32(Label_Mine.Text) - 1);   // 剩余地雷数目减1
+                        }
+                    }
+                    else if(pState[MouseFocus.X, MouseFocus.Y] == 2) // 红旗
+                    {
+                        pState[MouseFocus.X, MouseFocus.Y] = 3; // 问号
+                        Label_Mine.Text = Convert.ToString(Convert.ToInt32(Label_Mine.Text) + 1);   // 剩余地雷数目加1
+                    }
+                    else if(pState[MouseFocus.X, MouseFocus.Y] == 3) // 问号
+                    {
+                        pState[MouseFocus.X, MouseFocus.Y] = 0;  // 未点开
+                    }
+                }
+            }
+            this.Refresh();
+            bMouseLeft = bMouseRight = false;
+        }
+
+        private void dfs(int sx, int sy)
+        {
+            pState[sx, sy] = 1; // 访问该点
+            for(int i = 0; i < 4; i++)
+            {
+                // 获取相邻点的坐标
+                int x = sx + px[i];
+                int y = sy + py[i];
+                if(x >= 1 && x <= nWidth && y >= 1 && y <= nHeight && 
+                    pMine[x, y] != -1 && pMine[sx, sy] == 0 && 
+                    (pState[x, y] == 0 || pState[x, y] == 3)) // 不是地雷，处于地雷区域，且未点开，或者标记为问号
+                {
+                    dfs(x, y);  // 访问该点
+                }
+            }
+        }
+
+        private bool OpenMine(int sx, int sy)
+        {
+            bool bFlag = true;  // 默认周围无雷
+            for (int i = 0; i < 8; i++)
+            {
+                // 获取偏移量
+                int x = MouseFocus.X + dx[i];
+                int y = MouseFocus.Y + dy[i];
+                if (pState[x, y] == 0)   // 问号
+                {
+                    pState[x, y] = 1;   // 打开
+                    if(pMine[x, y] == -1)   // 有地雷
+                    {
+                        bFlag = false;
+                        break;
+                    }
+                }
+            }
+            return bFlag;
         }
     }
 }
