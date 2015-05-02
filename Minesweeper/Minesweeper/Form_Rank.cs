@@ -37,6 +37,10 @@ namespace Minesweeper
 
         private void Button_Reset_Click(object sender, EventArgs e)
         {
+            // 将标签置为默认值
+            Label_Beginer.Text = String.Format("Beginner:        {0}", 999);
+            Label_Intermediate.Text = String.Format("Intermediate:    {0}", 999);
+            Label_Expert.Text = String.Format("Expert:          {0}", 999);
             // 将所有记录设置为999即完成初始化
             Properties.Settings.Default.Beginner = 999;
             Properties.Settings.Default.Intermediate = 999;

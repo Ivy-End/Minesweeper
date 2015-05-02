@@ -30,10 +30,16 @@ namespace Minesweeper
         bool bMouseLeft;    // 鼠标左键是否被按下
         bool bMouseRight;   // 鼠标右键是否被按下
 
+        bool bGame; // 游戏是否结束
+
         int[,] pMine = new int[MAX_WIDTH, MAX_HEIGHT];  // 第一类数据
         int[,] pState = new int[MAX_WIDTH, MAX_HEIGHT]; // 第二类数据
 
         Point MouseFocus;   // 高亮点记录
+
+
+        System.Media.SoundPlayer soundTick; // 计时
+        System.Media.SoundPlayer soundBomb; // 爆炸
 
         public Form_Main()
         {
@@ -51,6 +57,10 @@ namespace Minesweeper
             bAudio = Properties.Settings.Default.Audio;
             markMToolStripMenuItem.Checked = bMark;
             audioMToolStripMenuItem.Checked = bAudio;
+
+            // 初始化音频信息
+            soundTick = new System.Media.SoundPlayer(Properties.Resources.Tick);
+            soundBomb = new System.Media.SoundPlayer(Properties.Resources.Bomb);
 
             UpdateSize();
             SelectLevel();            
@@ -174,32 +184,34 @@ namespace Minesweeper
                     }
                     else if(pState[i, j] == 1)  // 点开
                     {
-                        if(pMine[i, j] != -1)    // 非地雷
+                        // 绘制背景
+                        if(MouseFocus.X == i && MouseFocus.Y == j)
                         {
-                            // 绘制背景
-                            if(MouseFocus.X == i && MouseFocus.Y == j)
-                            {
-                                g.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.LightGray)), new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
-                            }
-                            else
-                            {
-                                g.FillRectangle(Brushes.LightGray, new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
-                            }
-                            // 绘制数字
-                            if(pMine[i, j] != 0)
-                            {
-                                Brush DrawBrush = new SolidBrush(Color.Blue);    // 定义钢笔
-                                // 各个地雷数目的颜色
-                                if (pMine[i, j] == 2) { DrawBrush = new SolidBrush(Color.Green); }
-                                if (pMine[i, j] == 3) { DrawBrush = new SolidBrush(Color.Red); }
-                                if (pMine[i, j] == 4) { DrawBrush = new SolidBrush(Color.DarkBlue); }
-                                if (pMine[i, j] == 5) { DrawBrush = new SolidBrush(Color.DarkRed); }
-                                if (pMine[i, j] == 6) { DrawBrush = new SolidBrush(Color.DarkSeaGreen); }
-                                if (pMine[i, j] == 7) { DrawBrush = new SolidBrush(Color.Black); }
-                                if (pMine[i, j] == 8) { DrawBrush = new SolidBrush(Color.DarkGray); }
-                                SizeF Size = g.MeasureString(pMine[i, j].ToString(), new Font("Consolas", 16));
-                                g.DrawString(pMine[i, j].ToString(), new Font("Consolas", 16), DrawBrush, nOffsetX + 34 * (i - 1) + 1 + (32 - Size.Width) / 2, nOffsetY + 34 * (j - 1) + 1 + (32 - Size.Height) / 2);
-                            }
+                            g.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.LightGray)), new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
+                        }
+                        else
+                        {
+                            g.FillRectangle(Brushes.LightGray, new Rectangle(nOffsetX + 34 * (i - 1) + 1, nOffsetY + 34 * (j - 1) + 1, 32, 32));
+                        }
+                        // 绘制数字
+                        if(pMine[i, j] > 0)
+                        {
+                            Brush DrawBrush = new SolidBrush(Color.Blue);    // 定义钢笔
+                            // 各个地雷数目的颜色
+                            if (pMine[i, j] == 2) { DrawBrush = new SolidBrush(Color.Green); }
+                            if (pMine[i, j] == 3) { DrawBrush = new SolidBrush(Color.Red); }
+                            if (pMine[i, j] == 4) { DrawBrush = new SolidBrush(Color.DarkBlue); }
+                            if (pMine[i, j] == 5) { DrawBrush = new SolidBrush(Color.DarkRed); }
+                            if (pMine[i, j] == 6) { DrawBrush = new SolidBrush(Color.DarkSeaGreen); }
+                            if (pMine[i, j] == 7) { DrawBrush = new SolidBrush(Color.Black); }
+                            if (pMine[i, j] == 8) { DrawBrush = new SolidBrush(Color.DarkGray); }
+                            SizeF Size = g.MeasureString(pMine[i, j].ToString(), new Font("Consolas", 16));
+                            g.DrawString(pMine[i, j].ToString(), new Font("Consolas", 16), DrawBrush, nOffsetX + 34 * (i - 1) + 1 + (32 - Size.Width) / 2, nOffsetY + 34 * (j - 1) + 1 + (32 - Size.Height) / 2);
+                        }
+                        // 绘制地雷
+                        if(pMine[i, j] == -1)
+                        {
+                            g.DrawImage(Properties.Resources.Mine, nOffsetX + 34 * (i - 1) + 1 + 4, nOffsetY + 34 * (j - 1) + 1 + 2);   // 绘制地雷
                         }
                     }
                 }
@@ -325,6 +337,7 @@ namespace Minesweeper
             Label_Mine.Text = nMineCnt.ToString();  // 显示地雷数目
             Label_Timer.Text = "0"; // 计时器清零
             Timer_Main.Enabled = true;  // 启动计时器计时 
+            bGame = false;  // 游戏暂未结束
         }
 
         private void Form_Main_MouseMove(object sender, MouseEventArgs e)
@@ -346,6 +359,10 @@ namespace Minesweeper
 
         private void Timer_Main_Tick(object sender, EventArgs e)
         {
+            if(bAudio)
+            {
+                soundTick.Play();   // 播放
+            }
             Label_Timer.Text = Convert.ToString(Convert.ToInt32(Label_Timer.Text) + 1); // 自增1秒
         }
 
@@ -363,7 +380,7 @@ namespace Minesweeper
 
         private void Form_Main_MouseUp(object sender, MouseEventArgs e)
         {
-            if (MouseFocus.X == 0 && MouseFocus.Y == 0) // 不在地雷区域
+            if ((MouseFocus.X == 0 && MouseFocus.Y == 0) || bGame) // 不在地雷区域或游戏结束
             {
                 return; // 不做任何处理
             }
@@ -392,6 +409,7 @@ namespace Minesweeper
                             if (!bFlag) // 周围有地雷
                             {
                                 // 结束游戏 
+                                GameLost();
                             }
                         }
                     }
@@ -399,13 +417,17 @@ namespace Minesweeper
             }
             else if(bMouseLeft) // 左键被按下
             {
-                if(pMine[MouseFocus.X, MouseFocus.Y] != -1 && pState[MouseFocus.X, MouseFocus.Y] == 0)
+                if(pMine[MouseFocus.X, MouseFocus.Y] != -1)
                 {
-                    dfs(MouseFocus.X, MouseFocus.Y);
+                    if(pState[MouseFocus.X, MouseFocus.Y] == 0)
+                    {
+                        dfs(MouseFocus.X, MouseFocus.Y);
+                    }
                 }
                 else
                 {
                     // 地雷，游戏结束
+                    GameLost();
                 }
             }
             else if(bMouseRight)    // 右键被按下
@@ -432,6 +454,7 @@ namespace Minesweeper
                 }
             }
             this.Refresh();
+            GameWin();
             bMouseLeft = bMouseRight = false;
         }
 
@@ -463,7 +486,11 @@ namespace Minesweeper
                 if (pState[x, y] == 0)   // 问号
                 {
                     pState[x, y] = 1;   // 打开
-                    if(pMine[x, y] == -1)   // 有地雷
+                    if(pMine[x, y] != -1)   // 无地雷
+                    {
+                        dfs(x, y);
+                    }
+                    else    // 有地雷
                     {
                         bFlag = false;
                         break;
@@ -471,6 +498,72 @@ namespace Minesweeper
                 }
             }
             return bFlag;
+        }
+
+        private void GameLost()
+        {
+            for(int i = 1; i <= nWidth; i++)
+            {
+                for(int j = 1; j <= nHeight; j++)
+                {
+                    if(pMine[i, j] == -1 && (pState[i, j] == 0 || pState[i, j] == 3))   // 未点开或者标记为问号的地雷
+                    {
+                        pState[i, j] = 1;   // 点开该地雷
+                    }
+                }
+            }
+            if(bAudio)
+            {
+                soundBomb.Play();
+            }
+            Timer_Main.Enabled = false; // 停止计时
+            bGame = true;
+        }
+
+        private void GameWin()
+        {
+            int nCnt = 0;   // 用户标记红旗数目、问号数目、以及无标记未点开区域总数
+            for(int i = 1; i <= nWidth; i++)
+            {
+                for(int j = 1; j <= nHeight; j++)
+                {
+                    if(pState[i ,j] == 0 || pState[i, j] == 2 || pState[i, j] == 3) // 对应无标记未点开区域、红旗区域、问号区域
+                    {
+                        nCnt++;
+                    }
+                }
+            }
+            if(nCnt == nMineCnt)    // 胜利条件
+            {
+                Timer_Main.Enabled = false; // 关闭计时器
+                MessageBox.Show(String.Format("游戏胜利，耗时：{0} 秒", Label_Timer.Text), "提示", MessageBoxButtons.OK);
+                // 更新记录
+                if(nWidth == 10 && nHeight == 10 && nMineCnt == 10) // 初级
+                {
+                    if(Properties.Settings.Default.Beginner > Convert.ToInt32(Label_Timer.Text))    // 更新记录
+                    {
+                        Properties.Settings.Default.Beginner = Convert.ToInt32(Label_Timer.Text);
+                        Properties.Settings.Default.Save();
+                    }
+                }
+                else if(nWidth == 16 && nHeight == 16 && nMineCnt == 40)    // 中级
+                {
+                    if (Properties.Settings.Default.Intermediate > Convert.ToInt32(Label_Timer.Text))    // 更新记录
+                    {
+                        Properties.Settings.Default.Intermediate = Convert.ToInt32(Label_Timer.Text);
+                        Properties.Settings.Default.Save();
+                    }
+                }
+                else if(nWidth == 30 && nHeight == 16 && nMineCnt == 99)    // 高级
+                {
+                    if (Properties.Settings.Default.Expert > Convert.ToInt32(Label_Timer.Text))    // 更新记录
+                    {
+                        Properties.Settings.Default.Expert = Convert.ToInt32(Label_Timer.Text);
+                        Properties.Settings.Default.Save();
+                    }
+                }
+                bGame = true;
+            }
         }
     }
 }

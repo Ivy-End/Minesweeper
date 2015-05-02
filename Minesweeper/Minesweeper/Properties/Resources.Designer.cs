@@ -61,6 +61,15 @@ namespace Minesweeper.Properties {
         }
         
         /// <summary>
+        ///   查找类似于 System.IO.MemoryStream 的 System.IO.UnmanagedMemoryStream 类型的本地化资源。
+        /// </summary>
+        internal static System.IO.UnmanagedMemoryStream Bomb {
+            get {
+                return ResourceManager.GetStream("Bomb", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
         internal static System.Drawing.Bitmap Doubt {
@@ -97,6 +106,15 @@ namespace Minesweeper.Properties {
             get {
                 object obj = ResourceManager.GetObject("Mine_Show", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似于 System.IO.MemoryStream 的 System.IO.UnmanagedMemoryStream 类型的本地化资源。
+        /// </summary>
+        internal static System.IO.UnmanagedMemoryStream Tick {
+            get {
+                return ResourceManager.GetStream("Tick", resourceCulture);
             }
         }
         

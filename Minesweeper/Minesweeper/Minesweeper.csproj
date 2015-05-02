@@ -111,6 +111,12 @@
   <ItemGroup>
     <None Include="Resources\Mine.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\计时.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\爆炸.wav" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
