@@ -17,8 +17,8 @@ namespace Minesweeper
         const int MAX_HEIGHT = 32;  // 最大高度
         int[] dx = new int[] { -1, 0, 1, -1, 1, -1, 0, 1 };   // x坐标偏移量
         int[] dy = new int[] { 1, 1, 1, 0, 0, -1, -1, -1 };   // y坐标偏移量
-        int[] px = new int[] { 1, -1, 0, 0 };   // 四方向x坐标偏移量
-        int[] py = new int[] { 0, 0, 1, -1 };   // 四方向y坐标偏移量
+        int[] px = new int[] { 1, -1, 0, 0, 1, -1, 1, -1 };   // 四方向x坐标偏移量
+        int[] py = new int[] { 0, 0, 1, -1, 1, 1, -1, -1 };   // 四方向y坐标偏移量
 
         public int nWidth;     // 表示雷区的宽度
         public int nHeight;        // 表示雷区的高度
@@ -461,7 +461,7 @@ namespace Minesweeper
         private void dfs(int sx, int sy)
         {
             pState[sx, sy] = 1; // 访问该点
-            for(int i = 0; i < 4; i++)
+            for(int i = 0; i < 8; i++)
             {
                 // 获取相邻点的坐标
                 int x = sx + px[i];
